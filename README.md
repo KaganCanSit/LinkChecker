@@ -26,5 +26,5 @@ git clone https://github.com/yourusername/LinkChecker.git
 cd LinkChecker
 ./link_checker.sh /path/to/your/directory
 ```
-
-The entire project is licensed under the [MIT license](https://github.com/KaganCanSit/LinkChecker/blob/main/LICENSE). But it has special conditions. The developer is not responsible for any damage that may occur due to malware, damage, misuse or other reasons.
+Required:
+The entire project is licensed under the [MIT license](https://github.com/KaganCanSit/LinkChecker/blob/main/LICENSE).
