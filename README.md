@@ -2,9 +2,10 @@
 
 LinkChecker is a powerful and user-friendly shell script designed to search and verify URLs in files in a given directory. The script recursively scans all files in the given directory, extracts URLs and checks their accessibility. It ensures the integrity of your connections by detecting and reporting broken connections, inaccessible servers or SSL certificate issues.
 
-Refund codes and site reactions may vary. Therefore, this tool does not offer you a 100% guarantee. It was written to help you start from somewhere and save you time.
-
-The process of parsing the links performed in this script is of course simple. It may not find all links correctly. In this case, you can contribute to improve the parse mechanics or add code specific to your situation.
+### Attention
+- Refund codes and site reactions may vary. Therefore, this tool does not offer you a 100% guarantee. It was written to help you start from somewhere and save you time.
+- The process of parsing the links performed in this script is of course simple. It may not find all links correctly. In this case, you can contribute to improve the parse mechanics or add code specific to your situation.
+- Do not run it in a project directory you do not know. As a result, you will communicate via curl by sending a network packet to the connections!
 
 ### Main Features
 - Recursively scans directories for URLs in files.
@@ -35,6 +36,8 @@ cd LinkChecker
 ### Contributions
 
 We are always open to participation and contributions. You can make suggestions and send pull requests to further improve this script. 
+
+I would be very happy if friends, especially those who are interested in regex, say that it is the job of parsers, and have good network knowledge, can help with the project.
 
 Before sending your content, please review it using "shellcheck". Please do not leave any errors or warning messages.
 
