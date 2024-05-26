@@ -1,43 +1,75 @@
 #!/bin/bash
 
-# Function to check the status of a link
-check_link() {
-    local link="$1"
-    
-    #ShellCheck warning - Declare and assign separately to avoid masking return values
-    local response
-    local http_code
+# Outside parameter
+SCAN_DIRECTORY="$1"
 
-    # Get the response header
-    response=$(curl -IsS "$link" | head -n 1)
+# Defines
+RED='\033[31m'
+YELLOW='\033[33m'
+GREEN='\033[32m'
+NC='\033[0m' # No Color
 
-    # If the response is empty, the server is unreachable
-    if [[ -z "$response" ]]; then
-        echo "[ LINK ERROR ] - Unable to connect to the server: $link"
-        return 1
+# Script Requirements Check
+# ------------------------------------------------------------------------------------------------------------
+if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+    echo "Usage: $0 <directory>"
+    echo "Parameters: <directory> - The directory to scan for links."
+    exit 1
+fi
+
+# Check if the directory exists
+if [[ ! -d "$SCAN_DIRECTORY" ]]; then
+    echo "$SCAN_DIRECTORY is not a directory or could not be found. Please provide a valid directory."
+    exit 1;
+fi
+
+# curl package is required to run this 
+if ! command -v curl &> /dev/null; then
+    echo "'curl' is not installed. Do you want to install it now? (yes/no)"
+    read -r response
+    if [[ "$response" =~ ^[Yy][Ee][Ss]|[Yy]$ ]]; then
+        # Operation system check 
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            if command -v apt-get &> /dev/null; then
+                sudo apt-get install curl
+            elif command -v yum &> /dev/null; then
+                sudo yum install curl
+            elif command -v pacman &> /dev/null; then
+                sudo pacman -S curl
+            else
+                echo "Unsupported package manager. Please install curl manually."
+                exit 1
+            fi
+        else
+            echo "Unsupported operating system. Please install curl manually."
+            exit 1
+        fi
+    else
+        echo "curl is required for this script to run. Please install curl and try again."
+        exit 1
     fi
-    
-    # Get the HTTP status code
-    http_code=$(echo "$response" | awk '{print $2}')
-    
-    # Connection successfull but context unreachable
-    if [[ "$http_code" -ge 400 ]]; then
-        echo "[ LINK ERROR ] - $link returned HTTP status code $http_code"
-        return 1
-    fi
-    
-    # SSL certificate error - unsafe link
-    if [[ "$response" =~ ^HTTP/1\.[01]\s[45] ]]; then
-        echo "[ SSL ERROR ] - SSL certificate error for $link"
-        return 1
-    fi
-    
-    echo "[ LINK OK ] - $link"
-    return 0
+fi
+# ------------------------------------------------------------------------------------------------------------
+
+# Functions
+# ------------------------------------------------------------------------------------------------------------
+function log_info() {
+    local message="$1"
+    echo -e "${GREEN}[INFO]${NC}\t $message"
+}
+
+function log_warn() {
+    local message="$1"
+    echo -e "${YELLOW}[WARN]${NC}\t $message"
+}
+
+function log_error() {
+    local message="$1"
+    echo -e "${RED}[ERROR]${NC}\t $message"
 }
 
 # Function to find links in files within a directory
-find_links() {
+function find_links() {
     local dir="$1"
     local found_links=()
 
@@ -47,7 +79,7 @@ find_links() {
 
     while IFS= read -r -d '' file;do
         if [[ -f "$file" ]]; then
-            links=$(grep -oP '(https?|ftp):\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
+            links=$(grep -soP '(https?|ftp):\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
             if [[ -n "$links" ]]; then
                 while IFS= read -r link; do
                     link=$(echo "$link" | sed 's/)//g' | sed 's/\.$//')
@@ -61,11 +93,116 @@ find_links() {
     echo "$sorted_unique_links"
 }
 
-echo "--------------------------------- CHECKING LINKS ---------------------------------"
-directory="/home/kagancansit/Desktop/Project/kagancansit.github.io"
-mapfile -t link_list < <(find_links "$directory")
+# Function to check the status of a link
+function check_link() {
+    local link="$1"
+    local response
+    local http_code
+    local curl_exit_code
+
+    # Get the response header and capture the error code
+    response=$(curl -IsS "$link" 2>&1)
+    curl_exit_code=$?
+
+    # Check for common curl error codes and provide meaningful messages
+    if [[ $curl_exit_code -ne 0 ]]; then
+        handle_curl_error "$curl_exit_code" "$link"
+        return 1
+    fi
+
+    # If the response is empty, the server is unreachable
+    if [[ -z "$response" ]]; then
+        log_error "Unable to connect to the server: $link"
+        return 1
+    fi
+
+    # Get the HTTP status code
+    http_code=$(echo "$response" | awk 'NR==1{print $2}')
+
+    # Handle specific HTTP status codes that indicate the link is still valid
+    handle_http_code "$http_code" "$link"
+    return 0
+}
+
+# Function to handle common curl errors
+function handle_curl_error() {
+    local error_code="$1"
+    local link="$2"
+
+    case $error_code in
+        6)
+            log_error "[LINK COULD NOT RESOLVE HOST] - $link"
+            ;;
+        7)
+            log_error "[LINK FAILED TO CONNECT TO HOST] - $link"
+            ;;
+        23)
+            log_error "[LINK FAILED WRITING BODY] - $link"
+            ;;
+        35)
+            log_error "[SSL HANDSHAKE FAILED] - $link"
+            ;;
+        60)
+            log_error "[SSL CERTIFICATE PROBLEM] - $link - More details: https://curl.se/docs/sslcerts.html"
+            ;;
+        *)
+            log_error "[LINK]\t CURL ERROR($error_code) - $link"
+            ;;
+    esac
+}
+
+# Function to handle HTTP status codes
+function handle_http_code() {
+    local http_code="$1"
+    local link="$2"
+
+    case $http_code in
+        103)
+            log_info "[LINK EARLY HITS] - $link"
+            ;;
+        200|201|202)
+            log_info "[LINK OK] - $link"
+            ;;
+        204)
+            log_warn "[LINK NO CONTENT] - $link"
+            ;;
+        301|302|303|304|308)
+            log_info "[LINK STATUS MOVED ($http_code)] - $link"
+            ;;
+        400)
+            log_warn "[LINK BAD REQUEST] - $link"
+            ;;
+        401|999) # 999 is a custom status code for unauthorized access(Linkedin)
+            log_warn "[LINK UNAUTHORIZED] - $link"
+            ;;
+        403)
+            log_warn "[LINK FORBIDDEN] - $link"
+            ;;
+        404)
+            log_error "[LINK NOT FOUND] - $link"
+            ;;
+        429)
+            log_warn "[LINK TOO MANY REQUESTS] - $link"
+            ;;
+        500)
+            log_error "[LINK INTERNAL SERVER ERROR] - $link"
+            ;;
+        503)
+            log_error "[LINK SERVICE UNAVAIBLE] - $link"
+            ;;
+        *)
+            log_error "[LINK UNKNOWN STATUS CODE ($http_code)] - $link"
+            ;;
+    esac
+}
+# ------------------------------------------------------------------------------------------------------------
+
+
+# Main Script
+echo "--------------------------------------------- LINK CHECKER ---------------------------------------------"
+mapfile -t link_list < <(find_links "$SCAN_DIRECTORY")
 for link in "${link_list[@]}"; do
     check_link "$link"
 done
-echo "----------------------------------------------------------------------------------"
+echo "--------------------------------------------------------------------------------------------------------"
 exit 0
