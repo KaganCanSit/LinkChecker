@@ -233,6 +233,5 @@ export -f handle_http_code
 echo "--------------------------------------------- LINK CHECKER ---------------------------------------------"
 mapfile -t link_list < <(find_links "$SCAN_DIRECTORY")
 printf "%s\n" "${link_list[@]}" | parallel -j "$THREAD_COUNT" check_link {} | awk -F '\t' '{ if ($1 ~ /\[ERROR\]/) { printf "\033[31m%s\033[0m\t%s\n", $1, $2 } else if ($1 ~ /\[INFO\]/) { printf "\033[32m%s\033[0m\t%s\n", $1, $2 } else if ($1 ~ /\[WARN\]/) { printf "\033[33m%s\033[0m\t%s\n", $1, $2 } else { print $0 } }'
-#printf "%s\n" "${link_list[@]}" | parallel -j "$THREAD_COUNT" check_link {} | awk '{ if ($0 ~ /\[INFO\]/) { print "\033[32m" $0 "\033[0m" } else if ($0 ~ /\[WARN\]/) { print "\033[33m" $0 "\033[0m" } else if ($0 ~ /\[ERROR\]/) { print "\033[31m" $0 "\033[0m" } else { print $0 } }'
 echo "--------------------------------------------------------------------------------------------------------"
 exit 0
