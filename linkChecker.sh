@@ -79,7 +79,7 @@ function find_links() {
 
     while IFS= read -r -d '' file;do
         if [[ -f "$file" ]]; then
-            links=$(grep -soP '(https?|ftp):\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
+            links=$(grep -soP 'https?:\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
             if [[ -n "$links" ]]; then
                 while IFS= read -r link; do
                     link=$(echo "$link" | sed 's/)//g' | sed 's/\.$//')
