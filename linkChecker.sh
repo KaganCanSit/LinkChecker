@@ -90,6 +90,12 @@ function find_links() {
     done < <(find "$dir" -type f -print0)
 
     sorted_unique_links=$(printf "%s\n" "${found_links[@]}" | sort -u)
+
+    # Check if any links are found
+    if [ ${#sorted_unique_links[@]} -eq 0 ]; then
+        log_error "No links found in the specified directory."
+        exit 1
+    fi
     echo "$sorted_unique_links"
 }
 
