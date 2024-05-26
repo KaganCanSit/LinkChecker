@@ -14,15 +14,19 @@ if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
     exit 1
 fi
 
-# Set the default thread count to 10 if not provided
-if [ "$#" -eq 1 ]; then
-    THREAD_COUNT=10
+# Check if SCAN_DIRECTORY is provided and exists
+if [ -z "$SCAN_DIRECTORY" ] || [ ! -d "$SCAN_DIRECTORY" ]; then
+    echo "Error: Please provide a valid directory to scan."
+    exit 1
 fi
 
-# Check if the directory exists
-if [[ ! -d "$SCAN_DIRECTORY" ]]; then
-    echo "$SCAN_DIRECTORY is not a directory or could not be found. Please provide a valid directory."
-    exit 1;
+# Check if THREAD_COUNT is provided and is a positive integer
+if [ -z "$THREAD_COUNT" ]; then
+    THREAD_COUNT=10
+    echo "Thread count not provided. Using default value: 10"
+elif ! [[ "$THREAD_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Error: THREAD_COUNT must be a positive integer."
+    exit 1
 fi
 
 # curl package is required to run this 
