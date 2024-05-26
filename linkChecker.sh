@@ -2,19 +2,21 @@
 
 # Outside parameter
 SCAN_DIRECTORY="$1"
-
-# Defines
-RED='\033[31m'
-YELLOW='\033[33m'
-GREEN='\033[32m'
-NC='\033[0m' # No Color
+THREAD_COUNT="$2"
 
 # Script Requirements Check
 # ------------------------------------------------------------------------------------------------------------
 if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
-    echo "Usage: $0 <directory>"
-    echo "Parameters: <directory> - The directory to scan for links."
+    echo "Usage: $0 <directory> <thread_count>"
+    echo "Parameters:" 
+    echo "* <directory> - The directory to scan for links."
+    echo "* <thread_count> - The number of threads to use for scanning. (Optional)"
     exit 1
+fi
+
+# Set the default thread count to 10 if not provided
+if [ "$#" -eq 1 ]; then
+    THREAD_COUNT=10
 fi
 
 # Check if the directory exists
@@ -49,23 +51,42 @@ if ! command -v curl &> /dev/null; then
         exit 1
     fi
 fi
+
+# parallel package is required to run this 
+if ! command -v parallel &> /dev/null; then
+    echo "'parallel' is not installed. Do you want to install it now? (yes/no)"
+    read -r response
+    if [[ "$response" =~ ^[Yy][Ee][Ss]|[Yy]$ ]]; then
+        # Operation system check 
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            if command -v apt-get &> /dev/null; then
+                sudo apt-get install parallel
+            elif command -v yum &> /dev/null; then
+                sudo yum install parallel
+            elif command -v pacman &> /dev/null; then
+                sudo pacman -S parallel
+            else
+                echo "Unsupported package manager. Please install parallel manually."
+                exit 1
+            fi
+        else
+            echo "Unsupported operating system. Please install parallel manually."
+            exit 1
+        fi
+    else
+        echo "parallel is required for this script to run. Please install parallel and try again."
+        exit 1
+    fi
+fi
 # ------------------------------------------------------------------------------------------------------------
 
 # Functions
 # ------------------------------------------------------------------------------------------------------------
-function log_info() {
-    local message="$1"
-    echo -e "${GREEN}[INFO]${NC}\t $message"
-}
 
-function log_warn() {
-    local message="$1"
-    echo -e "${YELLOW}[WARN]${NC}\t $message"
-}
-
-function log_error() {
-    local message="$1"
-    echo -e "${RED}[ERROR]${NC}\t $message"
+function log() {
+    local level="$1"
+    local message="$2"
+    echo -e "[$level]\t" "$message"
 }
 
 # Function to find links in files within a directory
@@ -93,7 +114,7 @@ function find_links() {
 
     # Check if any links are found
     if [ ${#sorted_unique_links[@]} -eq 0 ]; then
-        log_error "No links found in the specified directory."
+        log "ERROR" "No links found in the specified directory."
         exit 1
     fi
     echo "$sorted_unique_links"
@@ -118,7 +139,7 @@ function check_link() {
 
     # If the response is empty, the server is unreachable
     if [[ -z "$response" ]]; then
-        log_error "Unable to connect to the server: $link"
+        log "ERROR" "Unable to connect to the server: $link"
         return 1
     fi
 
@@ -137,22 +158,22 @@ function handle_curl_error() {
 
     case $error_code in
         6)
-            log_error "[LINK COULD NOT RESOLVE HOST] - $link"
+            log "ERROR" "[LINK COULD NOT RESOLVE HOST] - $link"
             ;;
         7)
-            log_error "[LINK FAILED TO CONNECT TO HOST] - $link"
+            log "ERROR" "[LINK FAILED TO CONNECT TO HOST] - $link"
             ;;
         23)
-            log_error "[LINK FAILED WRITING BODY] - $link"
+            log "ERROR" "[LINK FAILED WRITING BODY] - $link"
             ;;
         35)
-            log_error "[SSL HANDSHAKE FAILED] - $link"
+            log "ERROR" "[SSL HANDSHAKE FAILED] - $link"
             ;;
         60)
-            log_error "[SSL CERTIFICATE PROBLEM] - $link - More details: https://curl.se/docs/sslcerts.html"
+            log "ERROR" "[SSL CERTIFICATE PROBLEM] - $link - More details: https://curl.se/docs/sslcerts.html"
             ;;
         *)
-            log_error "[LINK]\t CURL ERROR($error_code) - $link"
+            log "ERROR" "[LINK]\t CURL ERROR($error_code) - $link"
             ;;
     esac
 }
@@ -164,51 +185,54 @@ function handle_http_code() {
 
     case $http_code in
         103)
-            log_info "[LINK EARLY HITS] - $link"
+            log "INFO" "[LINK EARLY HITS] - $link"
             ;;
         200|201|202)
-            log_info "[LINK OK] - $link"
+            log "INFO" "[LINK OK] - $link"
             ;;
         204)
-            log_warn "[LINK NO CONTENT] - $link"
+            log "WARN" "[LINK NO CONTENT] - $link"
             ;;
         301|302|303|304|308)
-            log_info "[LINK STATUS MOVED ($http_code)] - $link"
+            log "INFO" "[LINK STATUS MOVED ($http_code)] - $link"
             ;;
         400)
-            log_warn "[LINK BAD REQUEST] - $link"
+            log "WARN" "[LINK BAD REQUEST] - $link"
             ;;
         401|999) # 999 is a custom status code for unauthorized access(Linkedin)
-            log_warn "[LINK UNAUTHORIZED] - $link"
+            log "WARN" "[LINK UNAUTHORIZED] - $link"
             ;;
         403)
-            log_warn "[LINK FORBIDDEN] - $link"
+            log "WARN" "[LINK FORBIDDEN] - $link"
             ;;
         404)
-            log_error "[LINK NOT FOUND] - $link"
+            log "ERROR" "[LINK NOT FOUND] - $link"
             ;;
         429)
-            log_warn "[LINK TOO MANY REQUESTS] - $link"
+            log "WARN" "[LINK TOO MANY REQUESTS] - $link"
             ;;
         500)
-            log_error "[LINK INTERNAL SERVER ERROR] - $link"
+            log "ERROR" "[LINK INTERNAL SERVER ERROR] - $link"
             ;;
         503)
-            log_error "[LINK SERVICE UNAVAIBLE] - $link"
+            log "ERROR" "[LINK SERVICE UNAVAIBLE] - $link"
             ;;
         *)
-            log_error "[LINK UNKNOWN STATUS CODE ($http_code)] - $link"
+            log "ERROR" "[LINK UNKNOWN STATUS CODE ($http_code)] - $link"
             ;;
     esac
 }
 # ------------------------------------------------------------------------------------------------------------
 
+export -f check_link
+export -f log
+export -f handle_curl_error
+export -f handle_http_code
 
 # Main Script
 echo "--------------------------------------------- LINK CHECKER ---------------------------------------------"
 mapfile -t link_list < <(find_links "$SCAN_DIRECTORY")
-for link in "${link_list[@]}"; do
-    check_link "$link"
-done
+printf "%s\n" "${link_list[@]}" | parallel -j "$THREAD_COUNT" check_link {} | awk -F '\t' '{ if ($1 ~ /\[ERROR\]/) { printf "\033[31m%s\033[0m\t%s\n", $1, $2 } else if ($1 ~ /\[INFO\]/) { printf "\033[32m%s\033[0m\t%s\n", $1, $2 } else if ($1 ~ /\[WARN\]/) { printf "\033[33m%s\033[0m\t%s\n", $1, $2 } else { print $0 } }'
+#printf "%s\n" "${link_list[@]}" | parallel -j "$THREAD_COUNT" check_link {} | awk '{ if ($0 ~ /\[INFO\]/) { print "\033[32m" $0 "\033[0m" } else if ($0 ~ /\[WARN\]/) { print "\033[33m" $0 "\033[0m" } else if ($0 ~ /\[ERROR\]/) { print "\033[31m" $0 "\033[0m" } else { print $0 } }'
 echo "--------------------------------------------------------------------------------------------------------"
 exit 0
