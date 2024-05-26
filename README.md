@@ -4,6 +4,8 @@ LinkChecker is a powerful and user-friendly shell script designed to search and 
 
 Refund codes and site reactions may vary. Therefore, this tool does not offer you a 100% guarantee. It was written to help you start from somewhere and save you time.
 
+The process of parsing the links performed in this script is of course simple. It may not find all links correctly. In this case, you can contribute to improve the parse mechanics or add code specific to your situation.
+
 ### Main Features
 - Recursively scans directories for URLs in files.
 - Verifies the accessibility and status of each URL.
