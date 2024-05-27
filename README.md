@@ -13,7 +13,7 @@ LinkChecker is a powerful and user-friendly shell script designed to search and 
 - Identifies broken connections and SSL certificate errors.
 
 ### Use
-- Just specify the directory you want to scan and LinkChecker will do the rest.
+- Just specify the directory you want to scan and LinkChecker will do the rest. Also, if you wish, you can specify how many threads the parallel package will use as the second parameter. If you do not enter any parameters, 10 is assumed.
 - Ideal for web developers, content managers, and anyone who needs to ensure the reliability of their links.
 - Here you can view your site, project, etc. to browse and check links. It must be present in your local environment. It does not scan to a site on the Internet!
 
@@ -34,7 +34,12 @@ Start by cloning the repository and running the script in your terminal.
 ``` bash
 git clone https://github.com/KaganCanSit/LinkChecker.git
 cd LinkChecker
-./link_checker.sh /path/pathOfDirectory/directory
+./link_checker.sh /path/pathOfDirectory/directory thread_num(optional/default=10)
+```
+
+To get general information via sh;
+``` bash
+./link_checker.sh --help (or -h)
 ```
 
 ### Contributions
