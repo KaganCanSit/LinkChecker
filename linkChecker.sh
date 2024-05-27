@@ -104,7 +104,9 @@ function find_links() {
             if [[ -n "$links" ]]; then
                 while IFS= read -r link; do
                     link=$(echo "$link" | sed 's/)//g' | sed 's/\.$//')
-                    found_links+=("$link")
+                    if [ -n "$link" ];then
+                        found_links+=("$link")
+                    fi
                 done <<< "$links"
             fi
         fi
