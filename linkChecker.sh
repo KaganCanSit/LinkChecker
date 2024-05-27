@@ -2,14 +2,14 @@
 
 # Outside parameter
 SCAN_DIRECTORY="$1"
-THREAD_COUNT="$2"
+THREAD_COUNT=${2:-10}
 
 # --------------------------------------- Script Requirements Check ----------------------------------------------
 if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
     echo "Usage: $0 <directory> <thread_count>"
     echo "Parameters:" 
     echo "* <directory> - The directory to scan for links."
-    echo "* <thread_count> - The number of threads to use for scanning. (Optional)"
+    echo "* <thread_count> - The number of threads to use for scanning. (Optional/Default: 10)"
     exit 1
 fi
 
@@ -20,67 +20,47 @@ if [ -z "$SCAN_DIRECTORY" ] || [ ! -d "$SCAN_DIRECTORY" ]; then
 fi
 
 # Check if THREAD_COUNT is provided and is a positive integer
-if [ -z "$THREAD_COUNT" ]; then
-    THREAD_COUNT=10
-    echo "Thread count not provided. Using default value: 10"
-elif ! [[ "$THREAD_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+if ! [[ "$THREAD_COUNT" =~ ^[1-9][0-9]*$ ]]; then
     echo "Error: THREAD_COUNT must be a positive integer."
     exit 1
 fi
 
-# curl package is required to run this 
-if ! command -v curl &> /dev/null; then
-    echo "'curl' is not installed. Do you want to install it now? (yes/no)"
-    read -r response
-    if [[ "$response" =~ ^[Yy][Ee][Ss]|[Yy]$ ]]; then
-        # Operation system check 
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            if command -v apt-get &> /dev/null; then
-                sudo apt-get install curl
-            elif command -v yum &> /dev/null; then
-                sudo yum install curl
-            elif command -v pacman &> /dev/null; then
-                sudo pacman -S curl
+# Check required packages
+check_and_install_package() {
+    local package_name="$1"
+
+    if ! command -v "$package_name" &> /dev/null; then
+        echo "'$package_name' is not installed. Do you want to install it now? (yes/no)"
+        read -r response
+        if [[ "$response" =~ ^[Yy][Ee][Ss]|[Yy]$ ]]; then
+            # Operation system check 
+            if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+                if command -v apt-get &> /dev/null; then
+                    sudo apt-get install "$package_name"
+                elif command -v yum &> /dev/null; then
+                    sudo yum install "$package_name"
+                elif command -v pacman &> /dev/null; then
+                    sudo pacman -S "$package_name"
+                else
+                    echo "Unsupported package manager. Please install $package_name manually."
+                    exit 1
+                fi
             else
-                echo "Unsupported package manager. Please install curl manually."
+                echo "Unsupported operating system. Please install $package_name manually."
                 exit 1
             fi
         else
-            echo "Unsupported operating system. Please install curl manually."
+            echo "$package_name is required for this script to run. Please install $package_name and try again."
             exit 1
         fi
-    else
-        echo "curl is required for this script to run. Please install curl and try again."
-        exit 1
     fi
-fi
+}
+
+# curl package is required to run this 
+check_and_install_package "curl"
 
 # parallel package is required to run this 
-if ! command -v parallel &> /dev/null; then
-    echo "'parallel' is not installed. Do you want to install it now? (yes/no)"
-    read -r response
-    if [[ "$response" =~ ^[Yy][Ee][Ss]|[Yy]$ ]]; then
-        # Operation system check 
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            if command -v apt-get &> /dev/null; then
-                sudo apt-get install parallel
-            elif command -v yum &> /dev/null; then
-                sudo yum install parallel
-            elif command -v pacman &> /dev/null; then
-                sudo pacman -S parallel
-            else
-                echo "Unsupported package manager. Please install parallel manually."
-                exit 1
-            fi
-        else
-            echo "Unsupported operating system. Please install parallel manually."
-            exit 1
-        fi
-    else
-        echo "parallel is required for this script to run. Please install parallel and try again."
-        exit 1
-    fi
-fi
+check_and_install_package "parallel"
 
 # ------------------------------------------------ Functions -------------------------------------------------
 function log() {
@@ -158,26 +138,30 @@ function handle_curl_error() {
     local error_code="$1"
     local link="$2"
 
+    local log_level="ERROR"
+    local log_message=""
+
     case $error_code in
         6)
-            log "ERROR" "[LINK COULD NOT RESOLVE HOST] - $link"
+            log_message="[LINK COULD NOT RESOLVE HOST]"
             ;;
         7)
-            log "ERROR" "[LINK FAILED TO CONNECT TO HOST] - $link"
+            log_message="[LINK FAILED TO CONNECT TO HOST]"
             ;;
         23)
-            log "ERROR" "[LINK FAILED WRITING BODY] - $link"
+            log_message="[LINK FAILED WRITING BODY]"
             ;;
         35)
-            log "ERROR" "[SSL HANDSHAKE FAILED] - $link"
+            log_message="[SSL HANDSHAKE FAILED]"
             ;;
         60)
-            log "ERROR" "[SSL CERTIFICATE PROBLEM] - $link - More details: https://curl.se/docs/sslcerts.html"
+            log_message="[SSL CERTIFICATE PROBLEM]"
             ;;
         *)
-            log "ERROR" "[LINK]\t CURL ERROR($error_code) - $link"
+            log_message="[LINK]\t CURL ERROR($error_code)"
             ;;
     esac
+    log "$log_level" "$log_message - $link"
 }
 
 # Function to handle HTTP status codes
@@ -185,55 +169,78 @@ function handle_http_code() {
     local http_code="$1"
     local link="$2"
 
+    local log_level="WARN"
+    local log_message=""
+
     case $http_code in
         103)
-            log "INFO" "[LINK EARLY HITS] - $link"
+            log_level="INFO"
+            log_message="[LINK EARLY HINTS]"
             ;;
         200|201|202)
-            log "INFO" "[LINK OK] - $link"
+            log_level="INFO"
+            log_message="[LINK OK]"
             ;;
         204)
-            log "WARN" "[LINK NO CONTENT] - $link"
+            log_message="[LINK NO CONTENT]"
             ;;
         301|302|303|304|308)
-            log "INFO" "[LINK STATUS MOVED ($http_code)] - $link"
+            log_level="INFO"
+            log_message="[LINK REDIRECT ($http_code)]"
             ;;
         400)
-            log "WARN" "[LINK BAD REQUEST] - $link"
+            log_message="[LINK BAD REQUEST]"
             ;;
         401|999) # 999 is a custom status code for unauthorized access(Linkedin)
-            log "WARN" "[LINK UNAUTHORIZED] - $link"
+            log_message="[LINK UNAUTHORIZED]"
             ;;
         403)
-            log "WARN" "[LINK FORBIDDEN] - $link"
+            log_message="[LINK FORBIDDEN]"
             ;;
         404)
-            log "ERROR" "[LINK NOT FOUND] - $link"
+            log_level="ERROR"
+            log_message="[LINK NOT FOUND]"
             ;;
         429)
-            log "WARN" "[LINK TOO MANY REQUESTS] - $link"
+            log_message="[LINK TOO MANY REQUESTS]"
             ;;
         500)
-            log "ERROR" "[LINK INTERNAL SERVER ERROR] - $link"
+            log_level="ERROR"
+            log_message="[LINK INTERNAL SERVER ERROR]"
             ;;
         503)
-            log "ERROR" "[LINK SERVICE UNAVAIBLE] - $link"
+            log_level="ERROR"
+            log_message="[LINK SERVICE UNAVAIBLE]"
             ;;
         *)
-            log "ERROR" "[LINK UNKNOWN STATUS CODE ($http_code)] - $link"
+            log_level="ERROR"
+            log_message="[LINK UNKNOWN STATUS CODE ($http_code)]"
             ;;
     esac
+    log "$log_level" "$log_message - $link"
 }
 
-
-export -f check_link
+# Export functions for parallel execution
 export -f log
+export -f check_link
 export -f handle_curl_error
 export -f handle_http_code
 
 # -------------------------------------------------- Main Script ---------------------------------------------
 echo "--------------------------------------------- LINK CHECKER ---------------------------------------------"
 mapfile -t link_list < <(find_links "$SCAN_DIRECTORY")
-printf "%s\n" "${link_list[@]}" | parallel -j "$THREAD_COUNT" check_link {} | awk -F '\t' '{ if ($1 ~ /\[ERROR\]/) { printf "\033[31m%s\033[0m\t%s\n", $1, $2 } else if ($1 ~ /\[INFO\]/) { printf "\033[32m%s\033[0m\t%s\n", $1, $2 } else if ($1 ~ /\[WARN\]/) { printf "\033[33m%s\033[0m\t%s\n", $1, $2 } else { print $0 } }'
+printf "%s\n" "${link_list[@]}" | \
+parallel -j "$THREAD_COUNT" check_link {} | \
+awk -F '\t' '{
+    if ($1 ~ /\[ERROR\]/) {
+        printf "\033[31m%s\033[0m\t%s\n", $1, $2
+    } else if ($1 ~ /\[INFO\]/) {
+        printf "\033[32m%s\033[0m\t%s\n", $1, $2
+    } else if ($1 ~ /\[WARN\]/) {
+        printf "\033[33m%s\033[0m\t%s\n", $1, $2
+    } else { 
+        print $0 
+    }
+}'
 echo "--------------------------------------------------------------------------------------------------------"
 exit 0
