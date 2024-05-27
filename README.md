@@ -9,38 +9,52 @@ LinkChecker is a powerful and user-friendly shell script designed to search and 
 
 ### Main Features
 - Recursively scans directories for URLs in files.
-- Verifies the accessibility and status of each URL.
-- Identifies broken connections and SSL certificate errors.
-
-### Use
-- Just specify the directory you want to scan and LinkChecker will do the rest. Also, if you wish, you can specify how many threads the parallel package will use as the second parameter. If you do not enter any parameters, 10 is assumed.
-- Ideal for web developers, content managers, and anyone who needs to ensure the reliability of their links.
-- Here you can view your site, project, etc. to browse and check links. It must be present in your local environment. It does not scan to a site on the Internet!
+- Checks the status of each link using parallel processing for faster execution.
+- Provides detailed logs indicating the status of each link, including HTTP status codes and error messages.
+- Automatically installs required packages (curl and parallel) if they are missing.
+- Supports customizing the number of threads for scanning to optimize performance.
 
 ### Required
-- The "curl" and "parallel" packages is required to run the process. When you run the script, it will be checked and permission will be asked for installation. If you do not want to install it this way, you can install it yourself and use the script.
+The Link Checker requires the following packages to be installed:
 
-    You can install it with the following options according to your package manager.
-    ``` bash
+* curl: Command-line tool for transferring data with URLs.
+* parallel: Shell tool for executing commands in parallel.
+
+If these packages are not installed on your system, the script will be asked for installation prompt you to install them. If you do not want to install it this way, you can install it yourself and use the script.
+
+You can install it with the following options according to your package manager.
+
+``` bash
     sudo apt-get install curl
-    ```
-    ``` bash
-    sudo apt-get install parallel
-    ```
+```
 
-### Starting
-Start by cloning the repository and running the script in your terminal.
+``` bash
+    sudo apt-get install parallel
+```
+
+### Usage
+* Clone the repository containing the script to your local machine.
 
 ``` bash
 git clone https://github.com/KaganCanSit/LinkChecker.git
-cd LinkChecker
-./link_checker.sh /path/pathOfDirectory/directory thread_num(optional/default=10)
 ```
 
+* Change to the directory containing the script.
+
+``` bash
+cd LinkChecker
+```
+
+* Change to the directory containing the script.
+
+``` bash
+./link_checker.sh /path/pathOfDirectory/directory thread_num(optional/default=10)
+```
 To get general information via sh;
 ``` bash
 ./link_checker.sh --help (or -h)
 ```
+After execution, review the generated logs to identify any broken links and their status. 
 
 ### Contributions
 
@@ -56,4 +70,4 @@ shellcheck linkChecker.sh
 ```
 
 ### Licence:
-The entire project is licensed under the [MIT license](https://github.com/KaganCanSit/LinkChecker/blob/main/LICENSE).
+This project is licensed under the MIT License. See the [MIT license](https://github.com/KaganCanSit/LinkChecker/blob/main/LICENSE) file for details.
