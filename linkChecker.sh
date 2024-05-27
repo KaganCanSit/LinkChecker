@@ -158,7 +158,7 @@ function handle_curl_error() {
             log_message="[SSL CERTIFICATE PROBLEM]"
             ;;
         *)
-            log_message="[LINK]\t CURL ERROR($error_code)"
+            log_message="[LINK CURL ERROR $error_code]"
             ;;
     esac
     log "$log_level" "$log_message - $link"
