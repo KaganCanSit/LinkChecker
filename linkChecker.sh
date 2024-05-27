@@ -4,8 +4,7 @@
 SCAN_DIRECTORY="$1"
 THREAD_COUNT="$2"
 
-# Script Requirements Check
-# ------------------------------------------------------------------------------------------------------------
+# --------------------------------------- Script Requirements Check ----------------------------------------------
 if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
     echo "Usage: $0 <directory> <thread_count>"
     echo "Parameters:" 
@@ -82,11 +81,8 @@ if ! command -v parallel &> /dev/null; then
         exit 1
     fi
 fi
-# ------------------------------------------------------------------------------------------------------------
 
-# Functions
-# ------------------------------------------------------------------------------------------------------------
-
+# ------------------------------------------------ Functions -------------------------------------------------
 function log() {
     local level="$1"
     local message="$2"
@@ -226,14 +222,14 @@ function handle_http_code() {
             ;;
     esac
 }
-# ------------------------------------------------------------------------------------------------------------
+
 
 export -f check_link
 export -f log
 export -f handle_curl_error
 export -f handle_http_code
 
-# Main Script
+# -------------------------------------------------- Main Script ---------------------------------------------
 echo "--------------------------------------------- LINK CHECKER ---------------------------------------------"
 mapfile -t link_list < <(find_links "$SCAN_DIRECTORY")
 printf "%s\n" "${link_list[@]}" | parallel -j "$THREAD_COUNT" check_link {} | awk -F '\t' '{ if ($1 ~ /\[ERROR\]/) { printf "\033[31m%s\033[0m\t%s\n", $1, $2 } else if ($1 ~ /\[INFO\]/) { printf "\033[32m%s\033[0m\t%s\n", $1, $2 } else if ($1 ~ /\[WARN\]/) { printf "\033[33m%s\033[0m\t%s\n", $1, $2 } else { print $0 } }'
