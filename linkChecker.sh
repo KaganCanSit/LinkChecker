@@ -83,7 +83,7 @@ function find_links() {
             links=$(grep -soP 'https?:\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
             if [[ -n "$links" ]]; then
                 while IFS= read -r link; do
-                    link=$(echo "$link" | sed 's/)//g' | sed 's/\.$//')
+                    link=$(echo "$link" | sed 's/)//g' | sed 's/\.$//' | sed 's/&gt//g')
                     if [ -n "$link" ];then
                         found_links+=("$link")
                     fi
