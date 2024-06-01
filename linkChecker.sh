@@ -284,6 +284,9 @@ export -f handle_http_code
 
 # ------------------------------------------------ Main Execution -------------------------------------------------
 
+echo "OK! Let's do this. Link Checker is running..."
+echo "Selected parameters: Directory: $SCAN_DIRECTORY, Error Only: $ERROR_ONLY, Links with File: $LINKS_WITH_FILE, Thread Count: $THREAD_COUNT"
+
 links_and_files=$(find_links "$SCAN_DIRECTORY")
 if [[ -z "$links_and_files" ]]; then
     echo "No links found to check."
@@ -314,3 +317,5 @@ for link in "${!link_files_map[@]}"; do
     fi
 done
 wait
+
+echo "Link Checker has finished. Have a nice day!"
