@@ -8,12 +8,16 @@ THREAD_COUNT=${4:-10}
 
 # --------------------------------------- Script Requirements Check ----------------------------------------------
 if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
-    echo "Usage: $0 <directory> <thread_count> <error_only> [files...]"
-    echo "Parameters:"
-    echo "* <directory> - Directory address where links will be scanned."
-    echo "* <error_only> - Flag that ensures that only ERROR logs will be written. (Default: false)"
-    echo "* <links_with_file> - Prints the files containing the link. (Default: false)"
-    echo "* <thread_count> - The number of threads to use for scanning. (Default: 10)"
+cat <<EOF
+Usage: $0 <directory> <error_only> <links_with_file> <thread_count>
+Parameters:
+    * <directory> - Directory address where links will be scanned.
+    * <error_only> - Flag that ensures that only ERROR logs will be written. (Default: false)
+    * <links_with_file> - Prints the files containing the link. (Default: false)
+    * <thread_count> - The number of threads to use for scanning. (Default: 10)
+Example:
+    $0 /path/to/directory true true 20
+EOF
     exit 1
 fi
 
@@ -24,15 +28,12 @@ if [ -z "$SCAN_DIRECTORY" ] || [ ! -d "$SCAN_DIRECTORY" ]; then
 fi
 
 # Check if ERROR_ONLY and WRITE_TO_FILE are true or false
-if [[ "$ERROR_ONLY" != "true" && "$ERROR_ONLY" != "false" ]]; then
-    echo "Error: <error_only> parameter must be either true or false."
-    exit 1
-fi
-
-if [[ "$LINKS_WITH_FILE" != "true" && "$LINKS_WITH_FILE" != "false" ]]; then
-    echo "Error: <LINKS_WITH_FILE> parameter must be either true or false."
-    exit 1
-fi
+for param in "$ERROR_ONLY" "$LINKS_WITH_FILE"; do
+    if [[ "$param" != "true" && "$param" != "false" ]]; then
+        echo "Error: Parameters must be either true or false."
+        exit 1
+    fi
+done
 
 # Check if THREAD_COUNT is provided and is a positive integer
 if ! [[ "$THREAD_COUNT" =~ ^[1-9][0-9]*$ ]]; then
@@ -40,10 +41,8 @@ if ! [[ "$THREAD_COUNT" =~ ^[1-9][0-9]*$ ]]; then
     exit 1
 fi
 
-# Check required packages
-check_and_install_package() {
-    local package_name="$1"
-
+# Check if required packages are installed
+for package_name in curl parallel; do
     if ! command -v "$package_name" &>/dev/null; then
         echo "'$package_name' is not installed. Do you want to install it now? (yes/no)"
         read -r response
@@ -69,13 +68,7 @@ check_and_install_package() {
             exit 1
         fi
     fi
-}
-
-# curl package is required to run this
-check_and_install_package "curl"
-
-# parallel package is required to run this
-check_and_install_package "parallel"
+done
 
 # ------------------------------------------------ Functions -------------------------------------------------
 function log() {
@@ -90,17 +83,13 @@ function log() {
 
     case "$level" in
     "ERROR")
-        color="$color_red"
-        ;;
+        color="$color_red";;
     "WARN")
-        color="$color_yellow"
-        ;;
+        color="$color_yellow";;
     "INFO")
-        color="$color_green"
-        ;;
+        color="$color_green";;
     *)
-        color="$color_reset"
-        ;;
+        color="$color_reset";;
     esac
 
     # Print only error log
@@ -108,16 +97,11 @@ function log() {
         return
     fi
 
-    if [[ ${#files[@]} -gt 0 ]]; then
-        echo -e "${color}[$level]\t$message${color_reset}"
-        # Check file written permission
-        if [ "$LINKS_WITH_FILE" == "true" ]; then
-            for file in "${files[@]}"; do
-                echo -e "\tFile: $file"
-            done
-        fi
-    else
-        echo -e "${color}[$level]\t$message${color_reset}"
+    echo -e "${color}[$level]\t$message${color_reset}"
+    if [[ "$LINKS_WITH_FILE" == "true" && ${#files[@]} -gt 0 ]]; then
+        for file in "${files[@]}"; do
+            echo -e "\tFile: $file"
+        done
     fi
 }
 
@@ -198,23 +182,17 @@ function handle_curl_error() {
 
     case $error_code in
     6)
-        log_message="[LINK COULD NOT RESOLVE HOST]"
-        ;;
+        log_message="[LINK COULD NOT RESOLVE HOST]";;
     7)
-        log_message="[LINK FAILED TO CONNECT TO HOST]"
-        ;;
+        log_message="[LINK FAILED TO CONNECT TO HOST]";;
     23)
-        log_message="[LINK FAILED WRITING BODY]"
-        ;;
+        log_message="[LINK FAILED WRITING BODY]";;
     35)
-        log_message="[SSL HANDSHAKE FAILED]"
-        ;;
+        log_message="[SSL HANDSHAKE FAILED]";;
     60)
-        log_message="[SSL CERTIFICATE PROBLEM]"
-        ;;
+        log_message="[SSL CERTIFICATE PROBLEM]";;
     *)
-        log_message="[LINK CURL ERROR $error_code]"
-        ;;
+        log_message="[LINK CURL ERROR $error_code]";;
     esac
     log "$log_level" "$log_message - $link" "${files[@]}"
 }
@@ -231,47 +209,35 @@ function handle_http_code() {
     case $http_code in
     103)
         log_level="INFO"
-        log_message="[LINK EARLY HINTS]"
-        ;;
+        log_message="[LINK EARLY HINTS]";;
     200 | 201 | 202)
         log_level="INFO"
-        log_message="[LINK OK]"
-        ;;
+        log_message="[LINK OK]";;
     204)
-        log_message="[LINK NO CONTENT]"
-        ;;
+        log_message="[LINK NO CONTENT]";;
     301 | 302 | 303 | 304 | 308)
         log_level="INFO"
-        log_message="[LINK REDIRECT ($http_code)]"
-        ;;
+        log_message="[LINK REDIRECT ($http_code)]";;
     400)
-        log_message="[LINK BAD REQUEST]"
-        ;;
+        log_message="[LINK BAD REQUEST]";;
     401 | 999) # 999 is a custom status code for unauthorized access(Linkedin)
-        log_message="[LINK UNAUTHORIZED]"
-        ;;
+        log_message="[LINK UNAUTHORIZED]";;
     403)
-        log_message="[LINK FORBIDDEN]"
-        ;;
+        log_message="[LINK FORBIDDEN]";;
     404)
         log_level="ERROR"
-        log_message="[LINK NOT FOUND]"
-        ;;
+        log_message="[LINK NOT FOUND]";;
     429)
-        log_message="[LINK TOO MANY REQUESTS]"
-        ;;
+        log_message="[LINK TOO MANY REQUESTS]";;
     500)
         log_level="ERROR"
-        log_message="[LINK INTERNAL SERVER ERROR]"
-        ;;
+        log_message="[LINK INTERNAL SERVER ERROR]";;
     503)
         log_level="ERROR"
-        log_message="[LINK SERVICE UNAVAILABLE]"
-        ;;
+        log_message="[LINK SERVICE UNAVAILABLE]";;
     *)
         log_level="ERROR"
-        log_message="[LINK UNKNOWN STATUS CODE ($http_code)]"
-        ;;
+        log_message="[LINK UNKNOWN STATUS CODE ($http_code)]";;
     esac
     log "$log_level" "$log_message - $link" "${files[@]}"
 }
