@@ -259,7 +259,7 @@ export -f handle_http_code
 echo "OK! Let's do this. Link Checker is running..."
 echo "Selected parameters: Directory: $SCAN_DIRECTORY, Error Only: $ERROR_ONLY, Links with File: $LINKS_WITH_FILE, Thread Count: $THREAD_COUNT"
 
-links_and_files=$(find_links "$SCAN_DIRECTORY")
+links_and_files=$(find_links "$")
 if [[ -z "$links_and_files" ]]; then
     echo "No links found to check."
     exit 0
