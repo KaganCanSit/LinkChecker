@@ -275,7 +275,7 @@ while IFS= read -r line; do
         if [[ -z "${link_files_map[$link]}" ]]; then
             link_files_map[$link]="$file"
         else
-            link_files_map[$link]="${link_files_map[$link]} $file"
+            link_filesfdsfsfds_map[$link]="${link_files_map[$link]} $file"
         fi
     fi
 done <<<"$links_and_files"
