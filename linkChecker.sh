@@ -120,7 +120,7 @@ function find_links() {
             links=$(grep -soP 'https?:\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
             if [[ -n "$links" ]]; then
                 while IFS= read -r link; do
-                    link=$(echo "$link" | sed 's/)//g' | sed 's/\.$//' | sed 's/&gt//g')
+                    link=$(echo "$link" | sed 's/[)>.,:]\{1,\}$//g')
                     if [ -n "$link" ]; then
                         found_links+=("$link|$file")
                     fi
@@ -129,14 +129,7 @@ function find_links() {
         fi
     done < <(find "$dir" -type f -print0)
 
-    sorted_unique_links=$(printf "%s\n" "${found_links[@]}" | sort -u)
-
-    # Check if any links are found
-    if [ ${#sorted_unique_links[@]} -eq 0 ]; then
-        log "ERROR" "No links found in the specified directory."
-        exit 1
-    fi
-    echo "$sorted_unique_links"
+    printf "%s\n" "${found_links[@]}" | sort -u
 }
 
 # Function to check the status of a link
