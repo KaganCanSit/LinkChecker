@@ -13,9 +13,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
       
-    - name: Install ShellCheck
-      run: apt-get update && apt-get install shellcheck --yes
-      
     - name: Run ShellCheck
       run: shellcheck -s bash ./linkChecker.sh || true
 
