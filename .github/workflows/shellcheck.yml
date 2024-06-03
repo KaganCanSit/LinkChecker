@@ -19,6 +19,7 @@ jobs:
         echo "$output"
         if [ -n "$output" ]; then
           echo "::error::ShellCheck found issues in the script"
+          exit 1  # Hata kodu döndür
         fi
 
     - name: Fail if errors found
