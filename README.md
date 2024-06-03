@@ -68,6 +68,16 @@ To get general information via shell;
 ```
 After execution, review the generated logs to identify any broken links and their status. 
 
+## Exclude Desired Links From Scanning
+
+There may be links you don't want checked during the scan. For example, you typed "hhtp://remote_repository_address.git" for a code sample or a site where login is required. You can write these links to the "disabled_control_links.txt" file that you will define in the same directory as the script.
+
+``` bash
+    cd LinkChecker
+    touch disabled_control_links.txt
+    echo "Adress" >> disabled_control_links.txt
+```
+
 ## Contributions
 
 We welcome participation and contributions. You can make suggestions and send pull requests to further improve this script.

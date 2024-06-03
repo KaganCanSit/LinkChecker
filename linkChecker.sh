@@ -6,6 +6,12 @@ ERROR_ONLY=${2:-false}
 LINKS_WITH_FILE=${3:-false}
 THREAD_COUNT=${4:-10}
 
+# Define
+# There may be links you don't want checked during the scan. For example, you typed "hhtp://remote_repository_address.git" 
+# for a code sample or a site where login is required. You can write these links to the "disabled_control_links.txt" file that 
+# you will define in the same directory as the script.
+DISABLED_CONTROL_LINKS_FILE="disabled_control_links.txt"
+
 # --------------------------------------- Script Requirements Check ----------------------------------------------
 if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
 cat <<EOF
@@ -128,6 +134,13 @@ function find_links() {
             fi
         fi
     done < <(find "$dir" -type f -print0)
+
+    # Read disabled links from file and remove them from found links
+    if [ -f "$DISABLED_CONTROL_LINKS_FILE" ]; then
+        while IFS= read -r disabled_link; do
+            found_links=("${found_links[@]//$disabled_link}")
+        done < "$DISABLED_CONTROL_LINKS_FILE"
+    fi
 
     printf "%s\n" "${found_links[@]}" | sort -u
 }
