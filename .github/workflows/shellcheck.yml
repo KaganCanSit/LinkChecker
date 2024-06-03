@@ -3,7 +3,7 @@ name: ShellCheck
 on:
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   shellcheck:
@@ -13,11 +13,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
       
-    - name: Install ShellCheck
-      run: apt-get update && apt-get install shellcheck --yes
-      
     - name: Run ShellCheck
-      run: shellcheck -s bash ./linkChecker.sh || true
+      run: |
+        output=$(shellcheck -s bash ./linkChecker.sh)
+        echo "$output"
+        if [ -n "$output" ]; then
+          echo "::error::ShellCheck found issues in the script"
+        fi
 
     - name: Fail if errors found
       run: exit 1
