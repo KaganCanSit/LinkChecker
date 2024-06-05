@@ -13,6 +13,9 @@ Link Checker is a powerful and user-friendly shell script designed to search and
 - Provides detailed logs indicating the status of each link, including HTTP status codes and error messages.
 - Automatically installs required packages (curl and parallel) if they are missing.
 - Supports customizing the number of threads for scanning to optimize performance.
+- If desired, certain connections can be removed from the scope of screening.
+- Files containing links can be printed on the daily file optionally.
+- Only at the error level content can be printed on the daily file.
 
 ## Required
 The Link Checker requires the following packages to be installed:
