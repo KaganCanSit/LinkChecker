@@ -28,11 +28,25 @@ If these packages are not installed on your system, the script will prompt you t
 You can install them with the following options according to your package manager.
 
 ``` bash
+    # For Debian-based systems
     sudo apt-get install curl
+
+    # For Red Hat-based systems
+    sudo yum install curl
+
+    # For Arch-based systems
+    sudo pacman -S curl
 ```
 
 ``` bash
+    # For Debian-based systems
     sudo apt-get install parallel
+
+    # For Red Hat-based systems
+    sudo yum install parallel
+
+    # For Arch-based systems
+    sudo pacman -S parallel
 ```
 
 ## Usage
