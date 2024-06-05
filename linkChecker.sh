@@ -88,22 +88,20 @@ function log() {
     local color_yellow='\033[33m'
 
     case "$level" in
-    "ERROR")
-        color="$color_red";;
-    "WARN")
-        color="$color_yellow";;
-    "INFO")
-        color="$color_green";;
-    *)
-        color="$color_reset";;
+    "ERROR") color="$color_red";;
+    "WARN") color="$color_yellow";;
+    "INFO") color="$color_green";;
+    *) color="$color_reset";;
     esac
 
-    # Print only error log
+    # If ERROR_ONLY is true, only print ERROR logs
     if [ "$ERROR_ONLY" == "true" ] && [ "$level" != "ERROR" ]; then
         return
     fi
 
+    # Print the log message
     echo -e "${color}[$level]\t$message${color_reset}"
+    # If LINKS_WITH_FILE is true, print the files containing the link
     if [[ "$LINKS_WITH_FILE" == "true" && ${#files[@]} -gt 0 ]]; then
         for file in "${files[@]}"; do
             echo -e "\tFile: $file"
@@ -187,18 +185,12 @@ function handle_curl_error() {
     local log_message=""
 
     case $error_code in
-    6)
-        log_message="[LINK COULD NOT RESOLVE HOST]";;
-    7)
-        log_message="[LINK FAILED TO CONNECT TO HOST]";;
-    23)
-        log_message="[LINK FAILED WRITING BODY]";;
-    35)
-        log_message="[SSL HANDSHAKE FAILED]";;
-    60)
-        log_message="[SSL CERTIFICATE PROBLEM]";;
-    *)
-        log_message="[LINK CURL ERROR $error_code]";;
+    6)  log_message="[LINK COULD NOT RESOLVE HOST]";;
+    7)  log_message="[LINK FAILED TO CONNECT TO HOST]";;
+    23) log_message="[LINK FAILED WRITING BODY]";;
+    35) log_message="[SSL HANDSHAKE FAILED]";;
+    60) log_message="[SSL CERTIFICATE PROBLEM]";;
+    *)  log_message="[LINK CURL ERROR $error_code]";;
     esac
     log "$log_level" "$log_message - $link" "${files[@]}"
 }
@@ -209,41 +201,53 @@ function handle_http_code() {
     local link="$2"
     local files=("${@:3}")
 
-    local log_level="WARN"
+    local log_level=""
     local log_message=""
 
     case $http_code in
-    103)
-        log_level="INFO"
-        log_message="[LINK EARLY HINTS]";;
-    200 | 201 | 202)
-        log_level="INFO"
-        log_message="[LINK OK]";;
-    204)
-        log_message="[LINK NO CONTENT]";;
-    301 | 302 | 303 | 304 | 308)
-        log_level="INFO"
-        log_message="[LINK REDIRECT ($http_code)]";;
-    400)
-        log_message="[LINK BAD REQUEST]";;
-    401 | 999) # 999 is a custom status code for unauthorized access(Linkedin)
-        log_message="[LINK UNAUTHORIZED]";;
-    403)
-        log_message="[LINK FORBIDDEN]";;
-    404)
-        log_level="ERROR"
-        log_message="[LINK NOT FOUND]";;
-    429)
-        log_message="[LINK TOO MANY REQUESTS]";;
-    500)
-        log_level="ERROR"
-        log_message="[LINK INTERNAL SERVER ERROR]";;
-    503)
-        log_level="ERROR"
-        log_message="[LINK SERVICE UNAVAILABLE]";;
-    *)
-        log_level="ERROR"
-        log_message="[LINK UNKNOWN STATUS CODE ($http_code)]";;
+        # Info level status codes
+        103)
+            log_level="INFO"
+            log_message="[LINK EARLY HINTS]";;
+        200 | 201 | 202)
+            log_level="INFO"
+            log_message="[LINK OK]";;
+        301 | 302 | 303 | 304 | 308)
+            log_level="INFO"
+            log_message="[LINK REDIRECT ($http_code)]";;
+
+        # Warning level status codes
+        204)
+            log_level="WARN"
+            log_message="[LINK NO CONTENT]";;
+        400)
+            log_level="WARN"
+            log_message="[LINK BAD REQUEST]";;
+        401 | 999) # 999 is a custom status code for unauthorized access(Linkedin)
+            log_level="WARN"
+            log_message="[LINK UNAUTHORIZED]";;
+        403)
+            log_level="WARN"
+            log_message="[LINK FORBIDDEN]";;
+        429)
+            log_level="WARN"
+            log_message="[LINK TOO MANY REQUESTS]";;
+
+        # Error level status codes
+        404)
+            log_level="ERROR"
+            log_message="[LINK NOT FOUND]";;
+        500)
+            log_level="ERROR"
+            log_message="[LINK INTERNAL SERVER ERROR]";;
+        503)
+            log_level="ERROR"
+            log_message="[LINK SERVICE UNAVAILABLE]";;
+
+        # Unknown status codes
+        *)
+            log_level="ERROR"
+            log_message="[LINK UNKNOWN STATUS CODE ($http_code)]";;
     esac
     log "$log_level" "$log_message - $link" "${files[@]}"
 }
