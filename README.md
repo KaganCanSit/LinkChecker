@@ -13,9 +13,9 @@ Link Checker is a powerful and user-friendly shell script designed to search and
 - Provides detailed logs indicating the status of each link, including HTTP status codes and error messages.
 - Automatically installs required packages (curl and parallel) if they are missing.
 - Supports customizing the number of threads for scanning to optimize performance.
-- If desired, certain connections can be removed from the scope of screening.
-- Files containing links can be printed on the daily file optionally.
-- Only at the error level content can be printed on the daily file.
+- Allows excluding specific links from the scan.
+- Optionally prints files containing links to a daily log file.
+- Can log content only at the error level.
 
 ## Required
 The Link Checker requires the following packages to be installed:
@@ -23,30 +23,17 @@ The Link Checker requires the following packages to be installed:
 * curl: Command-line tool for transferring data with URLs.
 * parallel: Shell tool for executing commands in parallel.
 
-If these packages are not installed on your system, the script will prompt you to install them. If you do not want to install them this way, you can install them yourself and use the script.
-
-You can install them with the following options according to your package manager.
+If these packages are not installed on your system, the script will prompt you to install them. You can also install them manually:
 
 ``` bash
     # For Debian-based systems
-    sudo apt-get install curl
+    sudo apt-get install curl parallel
 
     # For Red Hat-based systems
-    sudo yum install curl
+    sudo yum install curl parallel
 
     # For Arch-based systems
-    sudo pacman -S curl
-```
-
-``` bash
-    # For Debian-based systems
-    sudo apt-get install parallel
-
-    # For Red Hat-based systems
-    sudo yum install parallel
-
-    # For Arch-based systems
-    sudo pacman -S parallel
+    sudo pacman -S curl parallel
 ```
 
 ## Usage
@@ -77,17 +64,17 @@ cd LinkChecker
 3. Run the script with the desired parameters.
 
 ``` bash
-./link_checker.sh /path/pathOfDirectory/directory error_only(default=false) links_with_file(default=false) thread_num(default=10)
+./link_checker.sh /path/to/directory [error_only] [links_with_file] [thread_count]
 ```
 To get general information via shell;
 ``` bash
-./link_checker.sh --help (or -h)
+./link_checker.sh --help
 ```
 After execution, review the generated logs to identify any broken links and their status. 
 
 ## Exclude Desired Links From Scanning
 
-There may be links you don't want checked during the scan. For example, you typed "hhtp://remote_repository_address.git" for a code sample or a site where login is required. You can write these links to the "disabled_control_links.txt" file that you will define in the same directory as the script.
+There may be links you don't want checked during the scan. For example, you might have a "http://remote_repository_address.git" link for a code sample or a site where login is required. You can write these links to the disabled_control_links.txt file in the same directory as the script.
 
 ``` bash
     cd LinkChecker
@@ -101,7 +88,7 @@ We welcome participation and contributions. You can make suggestions and send pu
 
 We especially encourage contributions from those interested in regex, have good network knowledge, and can help with the project.
 
-Before submitting your content, please review it using "shellcheck". Ensure there are no errors or warning messages.
+Before submitting your content, please review it using "shellcheck" to ensure there are no errors or warning messages.
 
 ``` bash
 sudo apt-get install shellcheck
