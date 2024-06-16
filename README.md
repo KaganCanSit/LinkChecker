@@ -88,7 +88,7 @@ We welcome participation and contributions. You can make suggestions and send pu
 
 We especially encourage contributions from those interested in regex, have good network knowledge, and can help with the project.
 
-We have prepared a guide for your [guidance](https://github.com/KaganCanSit/LinkChecker/blob/main/CODE_OF_CONDUCT.md), please take a look.
+We have prepared a guide for your [guidance](/CONTRIBUTING.md), please take a look.
 
 ## Licence:
 This project is licensed under the MIT License. See the [MIT license](https://github.com/KaganCanSit/LinkChecker/blob/main/LICENSE) file for details.
