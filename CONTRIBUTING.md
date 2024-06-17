@@ -49,12 +49,29 @@ git push origin feature-branch
 
 To maintain consistency and quality in the codebase, please follow these guidelines:
 
-- Shell Script Standards: Use [ShellCheck](https://www.shellcheck.net/) to check your shell scripts for errors and warnings.
+- Shell Script Standards: Use [ShellCheck](https://www.shellcheck.net/) to ensure your shell scripts adhere to best practices and avoid common issues:
 
 ``` bash
+# Install ShellCheck (if not already installed)
 sudo apt-get install shellcheck
+
+# Run ShellCheck on your shell script
 shellcheck link_checker.sh
 ```
+ShellCheck will analyze your link_checker.sh script for syntax errors, style inconsistencies, and common pitfalls in shell scripting.
+
+- General scrip test must pass: Ensure that your scripts pass general tests by running them against various test cases. It is also recommended to validate your script tests:
+``` bash
+# Update package list and install Bats (if not already installed)
+sudo apt-get install -y bats
+
+# Navigate to your LinkChecker directory
+cd /LinkChecker
+
+# Run Bats tests located in the tests/ directory
+bats tests/
+```
+This sequence of commands installs Bats (the Bash Automated Testing System) and executes all test cases defined in the tests/ directory of your LinkChecker project. This ensures that your scripts behave as expected across different scenarios.
 
 - Comments: Add comments to your code where necessary to explain functionality.
 - Readability: Write clear and readable code. Avoid complex and nested logic when possible.
