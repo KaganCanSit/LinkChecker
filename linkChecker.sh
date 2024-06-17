@@ -124,6 +124,10 @@ function find_links() {
             links=$(grep -soPI 'https?:\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
             if [[ -n "$links" ]]; then
                 while IFS= read -r link; do
+                    # When editing the warning specified for this section, functionality is disrupted. Based on the explanation on the Shellcheck page, 
+                    # I am disabling the check for now. Description: "Utilizing some of the more complex capabilities of sed is required occasionally, and it is safe to ignore SC2001."
+                    
+                    # shellcheck disable=SC2001
                     link=$(echo "$link" | sed 's/[)>.,:]\{1,\}$//g')
                     if [ -n "$link" ]; then
                         found_links+=("$link|$file")
