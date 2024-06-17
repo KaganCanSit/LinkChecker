@@ -121,7 +121,7 @@ function find_links() {
     # Scan all files in the directory
     while IFS= read -r -d '' file; do
         if [[ -f "$file" ]]; then
-            links=$(grep -soP 'https?:\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
+            links=$(grep -soPI 'https?:\/\/[\w\/:%#\$&\?\(\)~\.=\+\-]+(?![\w\/:%#\$&\?\(\)~\.=\+\-])' "$file")
             if [[ -n "$links" ]]; then
                 while IFS= read -r link; do
                     link=$(echo "$link" | sed 's/[)>.,:]\{1,\}$//g')
