@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+TEST_DIRECTORY="tests/sample_dir"
+TEST_EMPTY_TXT="${TEST_DIRECTORY}/empty.txt"
+TEST_LINKS_TXT="${TEST_DIRECTORY}/test_links.txt"
+TEST_LINKS_OUTPUT_TXT="${TEST_DIRECTORY}/test_links_output.txt"
+
+function create_sample_directory() {
+    if ! mkdir -p "$TEST_DIRECTORY"; then
+        echo "$TEST_DIRECTORY directory create failed!"
+        exit 1
+    fi
+}
+
+function file_create() {
+    local file="$1"
+
+    if ! touch "$file"; then
+        echo "$file file create failed!"
+        exit 1
+    fi
+}
+
+
+function create_test_links_file() {
+    file_create "$TEST_LINKS_TXT"
+
+    cat <<EOL >"$TEST_LINKS_OUTPUT_TXT"
+https://www.github.com
+https://www.youtube.com
+https://www.python.org
+https://stackoverflow.com
+https://www.microsoft.com
+https://www.shellcheck.net
+
+https://github.com/microsoft
+https://github.com/KaganCanSit
+https://github.com/badges/shields
+https://github.com/odb/official-bash-logo
+https://github.com/NVIDIA/open-gpu-kernel-modules
+https://github.com/github/docs/blob/main/content/actions/learn-github-actions/understanding-github-actions.md
+
+http://opensource.org/licenses/MIT
+https://git-scm.com/docs
+https://www.python.org/doc/
+https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging
+https://www.python.org/dev/peps/pep-0008/
+https://git-scm.com/book/en/v2/Git-Tools-Submodules#_submodules
+
+https://en.wikipedia.org/wiki/Software_repository
+http://tr.wikipedia.org/wiki/SSH
+https://tr.wikipedia.org/wiki/Markdown
+
+https://docs.microsoft.com/en-us/azure/devops/
+https://github.com/features/actions
+https://stackoverflow.blog/
+https://www.microsoft.com/en-us/software-download/windows10
+https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do
+https://www.python.org/downloads/release/python-391/#:~:text=Python%203.9.1%20is%20the%20first,language%20and%20extensive%20standard%20library
+
+http://uzak_deponun_adresi.git
+EOL
+}
+
+# Setup and teardown hooks for bats
+# Helper function to create sample directory and files for testing
+function setup() {
+    create_sample_directory
+    file_create "$TEST_EMPTY_TXT"
+    create_test_links_file
+}
+
+# Cleanup function to remove the sample directory after tests
+function teardown() {
+    if ! rm -rf "$TEST_DIRECTORY"; then
+        echo "$TEST_DIRECTORY directory remove failed!"
+        exit 1
+    fi
+}
