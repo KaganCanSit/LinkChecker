@@ -58,7 +58,15 @@ https://www.microsoft.com/en-us/software-download/windows10
 https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do
 https://www.python.org/downloads/release/python-391/#:~:text=Python%203.9.1%20is%20the%20first,language%20and%20extensive%20standard%20library
 
-http://uzak_deponun_adresi.git
+http://remote_repository_address.git
+https://www.microsoft.com/en-us/software-donwload/windows10
+https://developer.apple.com/library/archive/documentation/General/Conceptual/DevPedia-HI-CocoaCore/index.html
+https://aws.amazon/s3s3s
+https://aws.amazon/s3/?nc=h_l3c
+https://support.google.com/google-ads/answer/2375466?hl=en&ref_topic=3119071
+https://docs.github.com/e/rest/issues?apiVersion=2022-11-28
+https://www.npmjs.com/package/packagefail
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Glabol_Objects/JSON/pars
 EOL
 }
 

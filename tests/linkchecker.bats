@@ -97,7 +97,14 @@ load ./test_helper.bash
     [[ "${output}" == *"[LINK REDIRECT (301)] - https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do"* ]]
     [[ "${output}" == *"[LINK OK] - https://www.python.org/downloads/release/python-391/#:~:text=Python%203.9.1%20is%20the%20first"* ]]
     [[ "${output}" == *"[LINK REDIRECT (301)] - http://opensource.org/licenses/MIT"* ]]
-    [[ "${output}" == *"[LINK COULD NOT RESOLVE HOST] - http://uzak_deponun_adresi.git"* ]]
+    [[ "${output}" == *"[LINK COULD NOT RESOLVE HOST] - http://remote_repository_address.git"* ]]
+    [[ "${output}" == *"[LINK NOT FOUND] - https://www.microsoft.com/en-us/software-donwload/windows10"* ]]
+    [[ "${output}" == *"[LINK NOT FOUND] - https://developer.apple.com/library/archive/documentation/General/Conceptual/DevPedia-HI-CocoaCore/index.html"* ]]
+    [[ "${output}" == *"[LINK COULD NOT RESOLVE HOST] - https://aws.amazon/s3/?nc=h_l3c"* ]]
+    [[ "${output}" == *"[LINK NOT FOUND] - https://support.google.com/google-ads/answer/2375466?hl=en&ref_topic=3119071"* ]]
+    [[ "${output}" == *"[LINK NOT FOUND] - https://docs.github.com/e/rest/issues?apiVersion=2022-11-28"* ]]
+    [[ "${output}" == *"[LINK NOT FOUND] - https://www.npmjs.com/package/packagefail"* ]]
+    [[ "${output}" == *"[LINK NOT FOUND] - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Glabol_Objects/JSON/pars"* ]]
 }
 
 # Test the error_only flag
