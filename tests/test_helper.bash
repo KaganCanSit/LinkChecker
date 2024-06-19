@@ -1,34 +1,38 @@
 #!/usr/bin/env bash
 
+# Directories
 TEST_DIRECTORY="tests/sample_dir"
-TEST_ONLY_EXTENSIONS_DIRECTORY="${TEST_DIRECTORY}/only_extensions"
+ONLY_EXTENSIONS_DIRECTORY="${TEST_DIRECTORY}/only_extensions"
 
-TEST_EMPTY_TXT="${TEST_DIRECTORY}/empty.txt"
+# Test files
 TEST_LINKS_TXT="${TEST_DIRECTORY}/test_links.txt"
 TEST_LINKS_OUTPUT_TXT="${TEST_DIRECTORY}/test_links_output.txt"
-ONLY_EXTENSIONS_LINKS_TXT="${TEST_DIRECTORY}/only_extensions_links.txt"
+ONLY_EXTENSIONS_LINKS_TXT="${ONLY_EXTENSIONS_DIRECTORY}/only_extensions_links.txt"
 
-function create_directory() {
+function create_directory_if_not_exists() {
     local directory="$1"
 
-    if ! mkdir -p "$directory"; then
-        echo "$directory directory create failed!"
-        exit 1
+    if [[ ! -d "$directory" ]]; then
+        if ! mkdir -p "$directory"; then
+            echo "Error: Directory '$directory' could not be created."
+            exit 1
+        fi
     fi
 }
 
-function file_create() {
+function create_file_if_not_exists() {
     local file="$1"
 
-    if ! touch "$file"; then
-        echo "$file file create failed!"
-        exit 1
+    if [[ ! -f "$file" ]]; then
+        if ! touch "$file"; then
+            echo "Error: File '$file' could not be created."
+            exit 1
+        fi
     fi
 }
 
-
 function create_test_links_file() {
-    file_create "$TEST_LINKS_TXT"
+    create_file_if_not_exists "$TEST_LINKS_TXT"
 
     cat <<EOL >"$TEST_LINKS_OUTPUT_TXT"
 https://www.github.com
@@ -76,7 +80,7 @@ EOL
 }
 
 function create_only_extensions_links_file() {
-    file_create "$ONLY_EXTENSIONS_LINKS_TXT"
+    create_file_if_not_exists "$ONLY_EXTENSIONS_LINKS_TXT"
 
     cat <<EOL >"$ONLY_EXTENSIONS_LINKS_TXT"
 http://www
@@ -93,11 +97,10 @@ EOL
 # Setup and teardown hooks for bats
 # Helper function to create sample directory and files for testing
 function setup() {
-    create_directory "$TEST_DIRECTORY"
-    file_create "$TEST_EMPTY_TXT"
+    create_directory_if_not_exists "$TEST_DIRECTORY"
     create_test_links_file
 
-    create_directory "$TEST_ONLY_EXTENSIONS_DIRECTORY"
+    create_directory_if_not_exists "$ONLY_EXTENSIONS_DIRECTORY"
     create_only_extensions_links_file
 }
 
