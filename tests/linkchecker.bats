@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 TEST_DIRECTORY="tests/sample_dir"
+TEST_ONLY_EXTENSIONS_DIRECTORY="${TEST_DIRECTORY}/only_extensions"
 
 # Load the helper functions
 load ./test_helper.bash
@@ -65,9 +66,17 @@ load ./test_helper.bash
     [ "$status" -eq 0 ]
 }
 
+# Test the error_only flag
+@test "Check error_only flag" {
+    run bash linkChecker.sh "$TEST_DIRECTORY" true
+    [ "$status" -eq 0 ]
+    # Only errors and warnings should be present in the output
+    [[ "${output}" != *"[INFO]"* ]] && [[ "${output}" != *"[LINK OK]"* ]]
+}
+
 # Links check
 @test "Check return output only errors" {
-    run bash linkChecker.sh tests/sample_dir
+    run bash linkChecker.sh "$TEST_DIRECTORY"
     [ "$status" -eq 0 ]
     # Check if the output contains expected URL status
     [[ "${output}" == *"[LINK REDIRECT (301)] - https://www.github.com"* ]]
@@ -107,10 +116,10 @@ load ./test_helper.bash
     [[ "${output}" == *"[LINK NOT FOUND] - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Glabol_Objects/JSON/pars"* ]]
 }
 
-# Test the error_only flag
-@test "Check error_only flag" {
-    run bash linkChecker.sh tests/sample_dir true
+# Extensions remove check
+@test "Check only extensions links output" {
+    run bash linkChecker.sh "$TEST_ONLY_EXTENSIONS_DIRECTORY" false false
     [ "$status" -eq 0 ]
-    # Only errors and warnings should be present in the output
-    [[ "${output}" != *"[INFO]"* ]] && [[ "${output}" != *"[LINK OK]"* ]]
+    # Check if the output contains expected URL status
+    [[ "${output}" == *"No links found to check."* ]]
 }

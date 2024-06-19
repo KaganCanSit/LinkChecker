@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 
 TEST_DIRECTORY="tests/sample_dir"
+TEST_ONLY_EXTENSIONS_DIRECTORY="${TEST_DIRECTORY}/only_extensions"
+
 TEST_EMPTY_TXT="${TEST_DIRECTORY}/empty.txt"
 TEST_LINKS_TXT="${TEST_DIRECTORY}/test_links.txt"
 TEST_LINKS_OUTPUT_TXT="${TEST_DIRECTORY}/test_links_output.txt"
+ONLY_EXTENSIONS_LINKS_TXT="${TEST_DIRECTORY}/only_extensions_links.txt"
 
-function create_sample_directory() {
-    if ! mkdir -p "$TEST_DIRECTORY"; then
-        echo "$TEST_DIRECTORY directory create failed!"
+function create_directory() {
+    local directory="$1"
+
+    if ! mkdir -p "$directory"; then
+        echo "$directory directory create failed!"
         exit 1
     fi
 }
@@ -70,12 +75,30 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Glabol_Objects
 EOL
 }
 
+function create_only_extensions_links_file() {
+    file_create "$ONLY_EXTENSIONS_LINKS_TXT"
+
+    cat <<EOL >"$ONLY_EXTENSIONS_LINKS_TXT"
+http://www
+http://www.
+https://www.
+http://.com
+https://.com
+https://www..com
+https://www..org
+https://www..net
+EOL
+}
+
 # Setup and teardown hooks for bats
 # Helper function to create sample directory and files for testing
 function setup() {
-    create_sample_directory
+    create_directory "$TEST_DIRECTORY"
     file_create "$TEST_EMPTY_TXT"
     create_test_links_file
+
+    create_directory "$TEST_ONLY_EXTENSIONS_DIRECTORY"
+    create_only_extensions_links_file
 }
 
 # Cleanup function to remove the sample directory after tests

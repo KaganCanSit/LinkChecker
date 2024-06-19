@@ -109,6 +109,28 @@ function log() {
     fi
 }
 
+# Function that does not check whether the connection contains content other than "http", "https", "www" and domain name extensions (.com, .org, etc.)
+function check_url_content() {
+    local url=$1
+
+    # "http://", "https://" and "www." extesion remove
+    url=${url#http://}
+    url=${url#https://}
+    url=${url#www.}
+    url=${url#www}
+
+    # (.com, .org, .net vb.) domain name extensions remove
+    url=${url%.com}
+    url=${url%.org}
+    url=${url%.net}
+
+    # If the connection is empty or contains only "/", it is invalid.
+    if [[ -z $url || $url == "/" ]]; then
+        return 1
+    fi
+    return 0
+}
+
 # Function to find links in files within a directory
 function find_links() {
     local dir="$1"
@@ -130,7 +152,9 @@ function find_links() {
                     # shellcheck disable=SC2001
                     link=$(echo "$link" | sed 's/[)>.,:]\{1,\}$//g')
                     if [ -n "$link" ]; then
-                        found_links+=("$link|$file")
+                        if check_url_content "$link"; then
+                            found_links+=("$link|$file")
+                        fi
                     fi
                 done <<<"$links"
             fi
@@ -258,6 +282,7 @@ function handle_http_code() {
 
 # Export functions for parallel execution
 export -f log
+export -f check_url_content
 export -f check_link
 export -f handle_curl_error
 export -f handle_http_code
