@@ -1,19 +1,15 @@
 #!/bin/bash
 
-# Outside parameter
+# ------------------------------------------ Parameters -------------------------------------------------
 SCAN_DIRECTORY="$1"
 ERROR_ONLY=${2:-false}
 LINKS_WITH_FILE=${3:-false}
 THREAD_COUNT=${4:-10}
 
-# Define
-# There may be links you don't want checked during the scan. For example, you typed "hhtp://remote_repository_address.git" 
-# for a code sample or a site where login is required. You can write these links to the "disabled_control_links.txt" file that 
-# you will define in the same directory as the script.
 DISABLED_CONTROL_LINKS_FILE="disabled_control_links.txt"
 
-# --------------------------------------- Script Requirements Check ----------------------------------------------
-if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+# ------------------------------------------- Functions -------------------------------------------------
+function display_help() {
 cat <<EOF
 Usage: $0 <directory> <error_only> <links_with_file> <thread_count>
 Parameters:
@@ -24,59 +20,8 @@ Parameters:
 Example:
     $0 /path/to/directory true true 20
 EOF
-    exit 1
-fi
+}
 
-# Check if SCAN_DIRECTORY is provided and exists
-if [ -z "$SCAN_DIRECTORY" ] || [ ! -d "$SCAN_DIRECTORY" ]; then
-    echo "Error: Please provide a valid directory to scan."
-    exit 1
-fi
-
-# Check if ERROR_ONLY and WRITE_TO_FILE are true or false
-for param in "$ERROR_ONLY" "$LINKS_WITH_FILE"; do
-    if [[ "$param" != "true" && "$param" != "false" ]]; then
-        echo "Error: Parameters must be either true or false."
-        exit 1
-    fi
-done
-
-# Check if THREAD_COUNT is provided and is a positive integer
-if ! [[ "$THREAD_COUNT" =~ ^[1-9][0-9]*$ ]]; then
-    echo "Error: THREAD_COUNT must be a positive integer."
-    exit 1
-fi
-
-# Check if required packages are installed
-for package_name in curl parallel; do
-    if ! command -v "$package_name" &>/dev/null; then
-        echo "'$package_name' is not installed. Do you want to install it now? (yes/no)"
-        read -r response
-        if [[ "$response" =~ ^[Yy][Ee][Ss]|[Yy]$ ]]; then
-            # Operation system check
-            if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-                if command -v apt-get &>/dev/null; then
-                    sudo apt-get install "$package_name"
-                elif command -v yum &>/dev/null; then
-                    sudo yum install "$package_name"
-                elif command -v pacman &>/dev/null; then
-                    sudo pacman -S "$package_name"
-                else
-                    echo "Unsupported package manager. Please install $package_name manually."
-                    exit 1
-                fi
-            else
-                echo "Unsupported operating system. Please install $package_name manually."
-                exit 1
-            fi
-        else
-            echo "$package_name is required for this script to run. Please install $package_name and try again."
-            exit 1
-        fi
-    fi
-done
-
-# ------------------------------------------------ Functions -------------------------------------------------
 function log() {
     local level="$1"
     local message="$2"
@@ -106,6 +51,35 @@ function log() {
         for file in "${files[@]}"; do
             echo -e "\tFile: $file"
         done
+    fi
+}
+
+# Install required packages if not present
+check_and_install_package() {
+    local package_name="$1"
+    if ! command -v "$package_name" &>/dev/null; then
+        log "INFO" "'$package_name' is not installed. Do you want to install it now? (yes/no)"
+        read -r response
+        if [[ "$response" =~ ^[Yy][Ee][Ss]|[Yy]$ ]]; then
+            if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+                if command -v apt-get &>/dev/null; then
+                    sudo apt-get install "$package_name"
+                elif command -v yum &>/dev/null; then
+                    sudo yum install "$package_name"
+                elif command -v pacman &>/dev/null; then
+                    sudo pacman -S "$package_name"
+                else
+                    log "ERROR" "Unsupported package manager. Please install $package_name manually."
+                    exit 1
+                fi
+            else
+                log "ERROR" "Unsupported operating system. Please install $package_name manually."
+                exit 1
+            fi
+        else
+            log "ERROR" "Exiting. $package_name is required for this script to run. Please install $package_name and try again."
+            exit 1
+        fi
     fi
 }
 
@@ -171,8 +145,7 @@ function find_links() {
     printf "%s\n" "${found_links[@]}" | sort -u
 }
 
-# Function to check the status of a link
-function check_link() {
+function check_link_status() {
     local link="$1"
     local response
     local http_code
@@ -203,7 +176,6 @@ function check_link() {
     return 0
 }
 
-# Function to handle common curl errors
 function handle_curl_error() {
     local error_code="$1"
     local link="$2"
@@ -223,7 +195,6 @@ function handle_curl_error() {
     log "$log_level" "$log_message - $link" "${files[@]}"
 }
 
-# Function to handle HTTP status codes
 function handle_http_code() {
     local http_code="$1"
     local link="$2"
@@ -283,15 +254,51 @@ function handle_http_code() {
 # Export functions for parallel execution
 export -f log
 export -f check_url_content
-export -f check_link
+export -f check_link_status
 export -f handle_curl_error
 export -f handle_http_code
 
-# ------------------------------------------------ Main Execution -------------------------------------------------
+# ------------------------------- Parameter and Environment Checks --------------------------------------
+# Check directorys parameter
+if [ "$#" -lt 1 ]; then
+    log "ERROR" "Missing scan required parameters."
+    exit 1
+fi
 
-echo "OK! Let's do this. Link Checker is running..."
-echo "Selected parameters: Directory: $SCAN_DIRECTORY, Error Only: $ERROR_ONLY, Links with File: $LINKS_WITH_FILE, Thread Count: $THREAD_COUNT"
+# Check if --help or -h is provided
+if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+    display_help
+    exit 0
+fi
 
+# Check if SCAN_DIRECTORY is provided and exists
+if [ -z "$SCAN_DIRECTORY" ] || [ ! -d "$SCAN_DIRECTORY" ]; then
+    log "ERROR" "Please provide a valid directory to scan."
+    exit 1
+fi
+
+# Check if ERROR_ONLY and WRITE_TO_FILE are true or false
+for param in "$ERROR_ONLY" "$LINKS_WITH_FILE"; do
+    if [[ "$param" != "true" && "$param" != "false" ]]; then
+        log "ERROR" "Parameters must be either true or false."
+        exit 1
+    fi
+done
+
+# Check if THREAD_COUNT is provided and is a positive integer
+if ! [[ "$THREAD_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+    log "ERROR" "THREAD_COUNT must be a positive integer."
+    exit 1
+fi
+
+# Check for required packages
+for package in curl parallel; do
+    check_and_install_package "$package"
+done
+
+# ------------------------------------------------ Main -------------------------------------------------
+log "INFO" "OK! Let's do this. Link Checker is running..."
+log "INFO" "Selected parameters: Directory: $SCAN_DIRECTORY, Error Only: $ERROR_ONLY, Links with File: $LINKS_WITH_FILE, Thread Count: $THREAD_COUNT"
 links_and_files=$(find_links "$SCAN_DIRECTORY")
 if [[ -z "$links_and_files" ]]; then
     echo "No links found to check."
@@ -316,11 +323,10 @@ done <<<"$links_and_files"
 # Check links in parallel
 for link in "${!link_files_map[@]}"; do
     files=("${link_files_map["$link"]}")
-    check_link "$link" "${files[@]}" &
+    check_link_status "$link" "${files[@]}" &
     if (($(jobs -r -p | wc -l) >= THREAD_COUNT)); then
         wait -n
     fi
 done
 wait
-
-echo "Link Checker has finished. Have a nice day!"
+log "INFO" "Link Checker has finished. Have a nice day!"

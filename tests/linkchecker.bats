@@ -13,35 +13,33 @@ function check_output_contains() {
     [[ "${output}" == *"$expected"* ]]
 }
 
-# Test if the script runs without errors
-@test "Check if script runs without errors" {
+@test "Test script with --help/-h flag and returns status 0" {
     run bash linkChecker.sh --help
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
+
+    run bash linkChecker.sh -h
+    [ "$status" -eq 0 ]
 }
 
-# Test when no parameters are provided
-@test "Check script with no parameters" {
-    run bash linkChecker.sh false false
+@test "Test if no parameters returns status 1 with correct error message" {
+    run bash linkChecker.sh
     [ "$status" -eq 1 ]
-    # Check return message
-    check_output_contains "Error: Please provide a valid directory to scan."
+    check_output_contains "Missing scan required parameters."
 }
 
-# Test with invalid first parameter (not a directory)
-@test "Check script with invalid first parameter" {
+@test "Test if providing a non-directory returns status 1 with correct error message" {
     run bash linkChecker.sh "$TEST_DIRECTORY/test_links.txt"
     [ "$status" -eq 1 ]
-    # Check return message
-    [[ "${output}" == *"Error: Please provide a valid directory to scan."* ]]
+    [[ "${output}" == *"Please provide a valid directory to scan."* ]]
 }
 
-# Test error_only parameter with invalid value
-@test "Check error_only parameter with invalid value" {
+@test "Test error_only parameter" {
+    # Invalid value
     run bash linkChecker.sh "$TEST_DIRECTORY" test
     [ "$status" -eq 1 ]
-    # Check return message
-    [[ "${output}" == *"Error: Parameters must be either true or false."* ]]
+    [[ "${output}" == *"Parameters must be either true or false."* ]]
 
+    # Valid values
     run bash linkChecker.sh "$TEST_DIRECTORY" true
     [ "$status" -eq 0 ]
 
@@ -49,13 +47,13 @@ function check_output_contains() {
     [ "$status" -eq 0 ]
 }
 
-# Test links_with_file parameter with invalid value
-@test "Check links_with_file parameter with invalid value" {
+@test "Test links_with_file parameter" {
+    # Invalid value
     run bash linkChecker.sh "$TEST_DIRECTORY" true test 
     [ "$status" -eq 1 ]
-    # Check return message
-    [[ "${output}" == *"Error: Parameters must be either true or false."* ]]
+    [[ "${output}" == *"Parameters must be either true or false."* ]]
 
+    # Valid values
     run bash linkChecker.sh "$TEST_DIRECTORY" true true
     [ "$status" -eq 0 ]
 
@@ -63,27 +61,24 @@ function check_output_contains() {
     [ "$status" -eq 0 ]
 }
 
-# Test thread_count parameter with invalid value
-@test "Check thread_count parameter with invalid value" {
+@test "Test thread_count parameter" {
+    # Invalid value
     run bash linkChecker.sh "$TEST_DIRECTORY" true false aa
     [ "$status" -eq 1 ]
-    # Check return message
-    [[ "${output}" == *"Error: THREAD_COUNT must be a positive integer."* ]]
+    [[ "${output}" == *"THREAD_COUNT must be a positive integer."* ]]
 
+    # Valid values
     run bash linkChecker.sh "$TEST_DIRECTORY" false false 12
     [ "$status" -eq 0 ]
 }
 
-# Test the error_only flag
-@test "Check error_only flag" {
+@test "Test error_only=true, no INFO and WARN messages are logged" {
     run bash linkChecker.sh "$TEST_DIRECTORY" true
     [ "$status" -eq 0 ]
-    # Only errors and warnings should be present in the output
-    [[ "${output}" != *"[INFO]"* ]] && [[ "${output}" != *"[LINK OK]"* ]]
+    [[ "${output}" != *"[INFO]"* ]] && [[ "${output}" != *"[LINK OK]"* ]] && [[ "${output}" != *"[WARN]"* ]]
 }
 
-# Test link checking functionality
-@test "Check link checking functionality" {
+@test "Test link checking functionality" {
     run bash linkChecker.sh "$TEST_DIRECTORY"
     [ "$status" -eq 0 ]
     # Check if the output contains expected URL status
@@ -124,10 +119,8 @@ function check_output_contains() {
     check_output_contains "[LINK NOT FOUND] - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Glabol_Objects/JSON/pars"
 }
 
-# Test when there are no links to check in a directory
-@test "Check when no links to check in directory" {
+@test "Test when no links are found in the directory" {
     run bash linkChecker.sh "$ONLY_EXTENSIONS_DIRECTORY" false false
     [ "$status" -eq 0 ]
-    # Check if the output contains expected message
     [[ "${output}" == *"No links found to check."* ]]
 }
