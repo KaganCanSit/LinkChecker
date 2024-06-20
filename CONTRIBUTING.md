@@ -1,6 +1,6 @@
 # Contributing to Link Checker
 
-First off, thank you for considering contributing to Link Checker! It's people like you that make this project possible. We welcome any kind of contribution, whether it's reporting issues, submitting enhancements, or improving documentation
+First off, thank you for considering contributing to Link Checker! It's people like you that make this project possible. We welcome any kind of contribution, whether it's reporting issues, submitting enhancements, or improving documentation.
 
 ## How to Contribute
 
