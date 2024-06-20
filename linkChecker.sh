@@ -22,10 +22,14 @@ Example:
 EOF
 }
 
-function log() {
+log() {
     local level="$1"
     local message="$2"
     local files=("${@:3}")
+
+    #ShellCheck warning - Declare and assign separately to avoid masking return values
+    local timestamp
+    timestamp=$(date +"%Y-%m-%d %H:%M:%S")
 
     local color_reset='\033[0m'
     local color_red='\033[31m'
@@ -33,20 +37,17 @@ function log() {
     local color_yellow='\033[33m'
 
     case "$level" in
-    "ERROR") color="$color_red";;
-    "WARN") color="$color_yellow";;
-    "INFO") color="$color_green";;
-    *) color="$color_reset";;
+        "ERROR") color="$color_red";;
+        "WARN") color="$color_yellow";;
+        "INFO") color="$color_green";;
+        *) color="$color_reset";;
     esac
 
-    # If ERROR_ONLY is true, only print ERROR logs
-    if [ "$ERROR_ONLY" == "true" ] && [ "$level" != "ERROR" ]; then
-        return
-    fi
-
-    # Print the log message
-    echo -e "${color}[$level]\t$message${color_reset}"
-    # If LINKS_WITH_FILE is true, print the files containing the link
+    # Print log message
+    [[ "$ERROR_ONLY" == "true" && "$level" != "ERROR" ]] && return
+    echo -e "${color}[$level][$timestamp] $message${color_reset}"
+    
+    # Print files containing the link
     if [[ "$LINKS_WITH_FILE" == "true" && ${#files[@]} -gt 0 ]]; then
         for file in "${files[@]}"; do
             echo -e "\tFile: $file"
