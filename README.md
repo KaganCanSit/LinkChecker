@@ -90,5 +90,5 @@ We especially encourage contributions from those interested in regex, have good 
 
 We have prepared a guide for your [guidance](/CONTRIBUTING.md), please take a look.
 
-## Licence:
-This project is licensed under the MIT License. See the [MIT license](/LICENSE) file for details.
+## Licence
+This project is licensed under the MIT License. See the [MIT License](/LICENSE) file for details.
